@@ -20,10 +20,7 @@
         <!-- 头部 -->
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-[28px] font-semibold text-[#1d1d1f]">{{ name.full_name }}</h3>
-          <div class="flex gap-3">
-            <button class="text-[13px] text-[#86868b] hover:text-[#0071e3] transition-colors" @click="handleSpeech(name.full_name)">试读</button>
-            <button class="text-[13px] text-[#aeaeb2] hover:text-[#0071e3] transition-colors" @click="emit('favorite', name)">收藏</button>
-          </div>
+          <button class="text-[13px] text-[#aeaeb2] hover:text-[#0071e3] transition-colors" @click="emit('favorite', name)">收藏</button>
         </div>
 
         <!-- 寓意 -->
@@ -72,12 +69,6 @@ import type { LoadState, NameItem } from '../types'
 
 const props = defineProps<{ names: NameItem[]; state: LoadState; errorMessage: string }>()
 const emit = defineEmits<{ retry: []; favorite: [name: NameItem] }>()
-
-function handleSpeech(text: string) {
-  const u = new SpeechSynthesisUtterance(text)
-  u.lang = 'zh-CN'; u.rate = 0.8
-  speechSynthesis.speak(u)
-}
 
 async function exportPDF() {
   // 创建一个离屏容器用于渲染中文内容

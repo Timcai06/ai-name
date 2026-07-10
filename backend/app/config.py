@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()  # 加载 .env 文件中的环境变量
 
 # 数据库 — 默认 SQLite，设置 MYSQL_URL 环境变量切换 MySQL
-DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://root:rootpassword@localhost:3306/naming_db")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./naming.db")  # 默认 SQLite，生产设 MySQL URL
 
 # JWT
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
