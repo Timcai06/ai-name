@@ -7,7 +7,7 @@
 - 前端：Vue 3 + Vite + Tailwind CSS
 - 后端：Python FastAPI + SQLAlchemy
 - AI：DeepSeek API
-- 数据库：SQLite（可切换 MySQL）
+- 数据库：SQLite（可通过 `DATABASE_URL` 切换 MySQL/PostgreSQL）
 - 认证：JWT + bcrypt
 
 ## 快速开始

@@ -11,7 +11,7 @@
 |------|------|
 | 注册/登录/登出 | JWT 认证，密码 bcrypt 哈希 |
 | 路由守卫 | 未登录 → 强制跳转登录页 |
-| 数据库（SQLAlchemy） | 默认 SQLite，改 URL 即切 MySQL |
+| 数据库（SQLAlchemy） | MySQL，改 URL 即切 MySQL |
 | 3 张表（users + naming_history + auth_logs） | 用户 + 取名历史 + 认证日志 |
 | 取名历史记录 | 登录后可查看过往所有取名结果 |
 | 接口鉴权 | generate/refine/history 需登录 |
@@ -19,7 +19,7 @@
 
 ## 2. 数据库设计
 
-使用 SQLAlchemy ORM，默认 SQLite，改 `DATABASE_URL` 即切 MySQL。
+使用 SQLAlchemy ORM，MySQL，改 `DATABASE_URL` 即切 MySQL。
 
 ### users
 

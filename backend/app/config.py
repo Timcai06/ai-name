@@ -8,8 +8,8 @@ from dotenv import load_dotenv
 ROOT_DIR = Path(__file__).resolve().parents[2]
 load_dotenv(ROOT_DIR / ".env")
 
-# 数据库 — 默认 SQLite，设置 DATABASE_URL 环境变量切换 MySQL
-DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://root:rootpassword@localhost:3306/naming_db")
+# 数据库 — 默认 SQLite，设置 DATABASE_URL 环境变量可切换 MySQL/PostgreSQL
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./naming.db")  # 默认 SQLite，生产设 MySQL URL
 
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development").strip().lower()
 IS_PRODUCTION = ENVIRONMENT in {"production", "prod"}

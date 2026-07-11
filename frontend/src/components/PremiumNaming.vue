@@ -16,7 +16,7 @@ import PremiumResults from './PremiumResults.vue'
 
 const props = defineProps<{ authGuard?: () => boolean }>()
 
-const form = reactive<GenerateRequest>({ surname:'', gender:'male' })
+const form = reactive<GenerateRequest>({ surname:'', gender:'male', birthday:'', birth_time:'', style:'', expectations:'' })
 const names = ref<NameItem[]>([])
 const state = ref<LoadState>('idle')
 const error = ref('')
