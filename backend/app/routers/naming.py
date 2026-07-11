@@ -1,7 +1,9 @@
 """取名相关路由 — 难度2：JWT 鉴权 + 历史记录."""
 import json
+import os
+from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -15,6 +17,33 @@ from app.utils.deepseek import DeepSeekError
 
 router = APIRouter()
 _service = NamingService()
+_guest_trials: dict[str, str] = {}
+
+
+def _request_api_key(value: str | None) -> str | None:
+    if value is None:
+        return None
+    key = value.strip()
+    if not key or len(key) > 256:
+        raise HTTPException(status_code=400, detail="DeepSeek API Key 格式无效")
+    return key
+
+
+def _llm_http_error(error: DeepSeekError) -> HTTPException:
+    """模型供应商鉴权失败不能伪装成本应用的登录失效。"""
+    if error.status_code in {401, 403}:
+        return HTTPException(
+            status_code=502,
+            detail={
+                "error": True,
+                "message": "DeepSeek API Key 无效或已失效，请在模型设置中更换 Key",
+                "code": "LLM_AUTH_ERROR",
+            },
+        )
+    return HTTPException(
+        status_code=error.status_code or 500,
+        detail={"error": True, "message": str(error), "code": "LLM_ERROR"},
+    )
 
 
 # ── Request/Response Models ──────────────────────────────────
@@ -117,17 +146,38 @@ async def generate_names(
     request: GenerateRequest,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    deepseek_api_key: str | None = Header(None, alias="X-DeepSeek-API-Key"),
 ):
     """根据用户需求首次生成名字，自动保存历史."""
     try:
-        result = await _service.generate(request.model_dump())
+        result = await _service.generate(request.model_dump(), _request_api_key(deepseek_api_key))
     except DeepSeekError as e:
-        raise HTTPException(
-            status_code=e.status_code or 500,
-            detail={"error": True, "message": str(e), "code": "LLM_ERROR"},
-        )
+        raise _llm_http_error(e)
     _save_history(db, user.id, request, result)
     return result
+
+
+@router.get("/model-status", summary="模型配置状态")
+async def model_status():
+    return {"system_key_configured": bool(os.getenv("DEEPSEEK_API_KEY", "").strip())}
+
+
+@router.post("/guest-generate", response_model=GenerateResponse, summary="游客体验一次基础取名")
+async def guest_generate(
+    payload: GenerateRequest,
+    request: Request,
+    deepseek_api_key: str | None = Header(None, alias="X-DeepSeek-API-Key"),
+):
+    client = request.client.host if request.client else "unknown"
+    today = date.today().isoformat()
+    if _guest_trials.get(client) == today:
+        raise HTTPException(status_code=429, detail="今日游客体验已使用，登录后可继续取名")
+    _guest_trials[client] = today
+    try:
+        return await _service.generate(payload.model_dump(), _request_api_key(deepseek_api_key))
+    except DeepSeekError as e:
+        _guest_trials.pop(client, None)
+        raise _llm_http_error(e)
 
 
 @router.post(
@@ -139,6 +189,7 @@ async def refine_names(
     request: RefineRequest,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    deepseek_api_key: str | None = Header(None, alias="X-DeepSeek-API-Key"),
 ):
     """根据用户反馈微调名字，自动保存历史."""
     try:
@@ -146,12 +197,10 @@ async def refine_names(
             original_request=request.original_request.model_dump(),
             history=[msg.model_dump() for msg in request.history],
             feedback=request.feedback,
+            api_key=_request_api_key(deepseek_api_key),
         )
     except DeepSeekError as e:
-        raise HTTPException(
-            status_code=e.status_code or 500,
-            detail={"error": True, "message": str(e), "code": "LLM_ERROR"},
-        )
+        raise _llm_http_error(e)
     # 保存历史，附带完整微调对话 JSON（包含当前 feedback）
     full_history = [msg.model_dump() for msg in request.history]
     full_history.append({"role": "user", "content": request.feedback})
@@ -254,15 +303,13 @@ async def analyze_name(
     request: AnalyzeRequest,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    deepseek_api_key: str | None = Header(None, alias="X-DeepSeek-API-Key"),
 ):
     """AI 分析已有名字的寓意、五行、评分，并保存历史."""
     try:
-        result = await _service.analyze(request.full_name, request.gender)
+        result = await _service.analyze(request.full_name, request.gender, _request_api_key(deepseek_api_key))
     except DeepSeekError as e:
-        raise HTTPException(
-            status_code=e.status_code or 500,
-            detail={"error": True, "message": str(e), "code": "LLM_ERROR"},
-        )
+        raise _llm_http_error(e)
     # 保存分析历史
     record = NamingHistory(
         user_id=user.id,
@@ -312,6 +359,7 @@ async def compare_names(
     request: CompareRequest,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    deepseek_api_key: str | None = Header(None, alias="X-DeepSeek-API-Key"),
 ):
     """AI 横向对比多个名字，1元/次."""
     if any(len(name) > 20 for name in request.names):
@@ -323,9 +371,9 @@ async def compare_names(
             detail={"error": True, "message": f"余额不足（需{check.get('price',1)}元，余额{check.get('balance',0)}元）", "code": "INSUFFICIENT_BALANCE"},
         )
     try:
-        result = await _service.compare(request.names, request.gender)
+        result = await _service.compare(request.names, request.gender, _request_api_key(deepseek_api_key))
     except DeepSeekError as e:
-        raise HTTPException(status_code=e.status_code or 500, detail={"error": True, "message": str(e), "code": "LLM_ERROR"})
+        raise _llm_http_error(e)
     # 保存历史
     names_str = " vs ".join(request.names)
     _save_compare_history(db, user.id, names_str, request.gender, result)
@@ -337,6 +385,7 @@ async def premium_naming(
     request: PremiumRequest,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
+    deepseek_api_key: str | None = Header(None, alias="X-DeepSeek-API-Key"),
 ):
     """AI 精品取名（含八字/音律/字形/重名），2元/次."""
     check = check_and_deduct(db, user, "premium")
@@ -346,9 +395,9 @@ async def premium_naming(
             detail={"error": True, "message": f"余额不足（需{check.get('price',2)}元，余额{check.get('balance',0)}元）", "code": "INSUFFICIENT_BALANCE"},
         )
     try:
-        result = await _service.premium(request.model_dump())
+        result = await _service.premium(request.model_dump(), _request_api_key(deepseek_api_key))
     except DeepSeekError as e:
-        raise HTTPException(status_code=e.status_code or 500, detail={"error": True, "message": str(e), "code": "LLM_ERROR"})
+        raise _llm_http_error(e)
     _save_history(db, user.id, request, result)
     return result
 

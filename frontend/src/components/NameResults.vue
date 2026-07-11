@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full max-w-[680px] mx-auto">
+  <div class="w-full max-w-[820px] mx-auto">
     <!-- 空状态：初始 -->
     <div
       v-if="state === 'idle'"
@@ -65,6 +65,7 @@
       <div
         v-for="(name, idx) in names"
         :key="name.full_name"
+        ref="cards"
         class="bg-white/80 backdrop-blur-xl rounded-2xl p-6
                shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-[#d2d2d7]/30
                transition-all duration-300 hover:shadow-[0_4px_20px_rgba(0,0,0,0.06)]
@@ -104,13 +105,23 @@
 </template>
 
 <script setup lang="ts">
+import { nextTick, ref, watch } from 'vue'
+import gsap from 'gsap'
 import type { LoadState, NameItem } from '../types'
 
-defineProps<{
+const props = defineProps<{
   names: NameItem[]
   state: LoadState
   errorMessage: string
 }>()
+const cards = ref<HTMLElement[]>([])
+
+watch(() => [props.state, props.names], async () => {
+  if (props.state !== 'success') return
+  await nextTick()
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return
+  gsap.fromTo(cards.value, { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: .48, stagger: .08, ease: 'power3.out', clearProps: 'transform,opacity' })
+}, { deep: true })
 
 const emit = defineEmits<{
   retry: []

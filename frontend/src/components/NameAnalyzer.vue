@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full max-w-[680px] mx-auto">
+  <div class="w-full max-w-[820px] mx-auto">
     <!-- 输入卡片 -->
     <div class="bg-white/80 backdrop-blur-xl rounded-2xl p-6
                 shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-[#d2d2d7]/30 mb-8">
@@ -113,7 +113,9 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import axios from 'axios'
+import { analyzeName } from '../api'
+
+const props = defineProps<{ authGuard?: () => boolean }>()
 
 const name = ref('')
 const gender = ref('male')
@@ -123,16 +125,12 @@ const result = ref<any>(null)
 
 async function handleAnalyze() {
   if (!name.value.trim()) return
+  if (props.authGuard && !props.authGuard()) return
   loading.value = true
   error.value = ''
   result.value = null
   try {
-    const token = localStorage.getItem('ai_naming_token')
-    const res = await axios.post('/api/naming/analyze', {
-      full_name: name.value.trim(),
-      gender: gender.value,
-    }, { headers: { Authorization: `Bearer ${token}` } })
-    result.value = res.data
+    result.value = await analyzeName(name.value.trim(), gender.value)
   } catch (e: any) {
     error.value = e.response?.data?.detail?.message || e.message || '分析失败'
   } finally {

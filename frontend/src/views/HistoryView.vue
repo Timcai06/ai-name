@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-[#f5f5f7]">
+  <div class="min-h-screen bg-[#f6f3ec]">
     <div class="max-w-[800px] mx-auto px-6 py-16">
       <!-- 顶部 -->
       <div class="flex items-start justify-between mb-8">
@@ -10,7 +10,7 @@
           <p class="mt-2 text-[15px] text-[#86868b]">
             共 {{ total }} 条记录
           </p>
-          <select v-model="filter" class="mt-2 text-[14px] bg-[#f5f5f7] rounded-lg px-3 py-1.5 outline-none border border-[#d2d2d7]/30" @change="loadData">
+          <select v-model="filter" class="mt-2 text-[14px] bg-[#f6f3ec] rounded-lg px-3 py-1.5 outline-none border border-[#d2d2d7]/30" @change="loadData">
             <option value="">全部类型</option>
             <option value="naming">仅取名</option>
             <option value="analyze">仅分析</option>

@@ -1,10 +1,10 @@
 <template>
-  <div class="w-full max-w-[680px] mx-auto">
+  <div class="w-full max-w-[820px] mx-auto rounded-[24px] border border-[#d9d1c3] bg-[#f6f3ec]/70 p-4 md:p-5">
     <!-- 对话气泡 -->
     <TransitionGroup
       name="bubble"
       tag="div"
-      class="space-y-3 mb-5 max-h-[280px] overflow-y-auto scrollbar-thin"
+      class="space-y-3 mb-5 h-auto max-h-[320px] overflow-y-auto overscroll-contain pr-2 scrollbar-thin"
       appear
     >
       <div
@@ -14,8 +14,9 @@
         :class="msg.role === 'user' ? 'justify-end' : 'justify-start'"
       >
         <div
-          class="max-w-[80%] px-4 py-2.5 rounded-2xl text-[15px] leading-relaxed
+          class="px-4 py-2.5 rounded-2xl text-[15px] leading-[22px]
                  transition-all duration-300"
+          :style="bubbleStyle(msg.content)"
           :class="msg.role === 'user'
             ? 'bg-[#0071e3] text-white rounded-br-md'
             : 'bg-[#e8e8ed] text-[#1d1d1f] rounded-bl-md'"
@@ -66,6 +67,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { measureLineStats, prepareWithSegments } from '@chenglou/pretext'
 import type { ChatMessage } from '../types'
 
 const props = defineProps<{
@@ -81,6 +83,19 @@ const emit = defineEmits<{
 const feedback = ref('')
 
 const canSend = computed(() => feedback.value.trim().length > 0 && !props.loading)
+const MAX_TEXT_WIDTH = 440
+const bubbleWidths = new Map<string, number>()
+
+function bubbleStyle(text: string) {
+  let width = bubbleWidths.get(text)
+  if (!width) {
+    const prepared = prepareWithSegments(text, '15px Arial', { wordBreak: 'normal' })
+    const stats = measureLineStats(prepared, MAX_TEXT_WIDTH)
+    width = Math.min(MAX_TEXT_WIDTH + 32, Math.max(58, Math.ceil(stats.maxLineWidth) + 32))
+    bubbleWidths.set(text, width)
+  }
+  return { width: `${width}px`, maxWidth: '82%' }
+}
 
 function handleSend() {
   if (!canSend.value) return

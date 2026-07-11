@@ -1,8 +1,12 @@
 """应用配置."""
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
-load_dotenv()  # 加载 .env 文件中的环境变量
+
+# 始终读取仓库根目录的 .env，不依赖 uvicorn 从哪个目录启动。
+ROOT_DIR = Path(__file__).resolve().parents[2]
+load_dotenv(ROOT_DIR / ".env")
 
 # 数据库 — 默认 SQLite，设置 DATABASE_URL 环境变量切换 MySQL
 DATABASE_URL = os.getenv("DATABASE_URL", "mysql+pymysql://root:rootpassword@localhost:3306/naming_db")

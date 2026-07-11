@@ -1,5 +1,5 @@
 <template>
-  <div class="w-full max-w-[680px] mx-auto">
+  <div class="w-full max-w-[820px] mx-auto">
     <div class="bg-white/80 backdrop-blur-xl rounded-2xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.04)] mb-8">
       <div class="flex gap-2 flex-wrap mb-4">
         <div v-for="(n,i) in names" :key="i" class="flex items-center gap-1 bg-[#f5f5f7] rounded-full px-3 py-1.5">
@@ -43,6 +43,8 @@
 import { ref } from 'vue'
 import { compareNames } from '../api'
 
+const props = defineProps<{ authGuard?: () => boolean }>()
+
 const names = ref(['',''])
 const gender = ref('male')
 const loading = ref(false)
@@ -52,6 +54,7 @@ const result = ref<any>(null)
 async function handleCompare() {
   const list = names.value.map(n=>n.trim()).filter(Boolean)
   if (list.length<2) return
+  if (props.authGuard && !props.authGuard()) return
   loading.value=true; error.value=''; result.value=null
   try { result.value = await compareNames(list, gender.value) } catch(e:any){ error.value=e.message } finally{loading.value=false}
 }

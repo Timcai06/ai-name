@@ -1,6 +1,6 @@
 <template>
   <div
-    class="w-full max-w-[680px] mx-auto bg-white/80 backdrop-blur-xl rounded-2xl
+    class="w-full max-w-[820px] mx-auto bg-white/80 backdrop-blur-xl rounded-2xl
            shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-[#d2d2d7]/30
            transition-all duration-500"
   >
