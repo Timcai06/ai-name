@@ -19,23 +19,28 @@ export async function login(username: string, password: string): Promise<{ token
   return res.data
 }
 
-// 请求拦截：自动注入 token
+export const DEEPSEEK_KEY_SESSION = 'ai_naming_deepseek_key'
+
+// 请求拦截：自动注入登录状态与会话级模型 Key
 http.interceptors.request.use((config) => {
   const token = localStorage.getItem('ai_naming_token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
+  const modelKey = sessionStorage.getItem(DEEPSEEK_KEY_SESSION)
+  if (modelKey) config.headers['X-DeepSeek-API-Key'] = modelKey
   return config
 })
 
-// 响应拦截：统一错误处理 + 401 自动跳转登录
+// 响应拦截：统一错误处理；公开首页不因会话过期被强制跳走
 http.interceptors.response.use(
   (res) => res,
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('ai_naming_token')
       localStorage.removeItem('ai_naming_username')
-      window.location.href = '/login'
+      localStorage.removeItem('ai_naming_role')
+      window.dispatchEvent(new Event('ai-auth-expired'))
       return Promise.reject(new Error('登录已过期，请重新登录'))
     }
     if (!error.response) {
@@ -55,6 +60,21 @@ http.interceptors.response.use(
 /** 首次生成名字 */
 export async function generateNames(data: GenerateRequest): Promise<GenerateResponse> {
   const res = await http.post('/naming/generate', data)
+  return res.data
+}
+
+export async function guestGenerateNames(data: GenerateRequest): Promise<GenerateResponse> {
+  const res = await http.post('/naming/guest-generate', data)
+  return res.data
+}
+
+export async function getModelStatus(): Promise<{ system_key_configured: boolean }> {
+  const res = await http.get('/naming/model-status')
+  return res.data
+}
+
+export async function analyzeName(fullName: string, gender: string): Promise<any> {
+  const res = await http.post('/naming/analyze', { full_name: fullName, gender })
   return res.data
 }
 

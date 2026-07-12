@@ -31,5 +31,7 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem(ROLE_KEY)
   }
 
+  window.addEventListener('ai-auth-expired', clearAuth)
+
   return { token, username, role, isLoggedIn, isAdmin, setAuth, clearAuth }
 })

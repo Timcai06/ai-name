@@ -7,7 +7,7 @@
 - 前端：Vue 3 + Vite + Tailwind CSS
 - 后端：Python FastAPI + SQLAlchemy
 - AI：DeepSeek API
-- 数据库：MySQL 5.7（Docker）
+- 数据库：SQLite（可通过 `DATABASE_URL` 切换 MySQL/PostgreSQL）
 - 认证：JWT + bcrypt
 
 ## 快速开始
@@ -18,7 +18,7 @@
 # 后端
 cd backend
 pip install -r requirements.txt
-cp .env.example .env  # 编辑配置 DEEPSEEK_API_KEY
+cp .env.example .env  # 填写 SECRET_KEY、管理员凭据和 DEEPSEEK_API_KEY
 uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 
 # 前端
@@ -33,7 +33,14 @@ npm run dev
 
 ```bash
 docker build -t ai-naming .
-docker run -p 8000:8000 -e DEEPSEEK_API_KEY=your-key ai-naming
+docker run -p 8000:8000 \
+  -e SECRET_KEY="$(openssl rand -hex 32)" \
+  -e ADMIN_USERNAME=your-admin \
+  -e ADMIN_PASSWORD='use-a-strong-password' \
+  -e DEEPSEEK_API_KEY=your-key \
+  ai-naming
+
+生产镜像会拒绝空或弱 JWT 密钥，也不会在每次启动时重置已有管理员密码。`/api/payment/recharge` 仅在显式设置 `ENABLE_DEMO_RECHARGE=true` 时启用，生产环境请保持关闭。
 ```
 
 ## 项目文档

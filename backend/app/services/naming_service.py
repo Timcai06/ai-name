@@ -7,6 +7,7 @@ import uuid
 from app.utils.deepseek import DeepSeekClient, DeepSeekError
 
 logger = logging.getLogger(__name__)
+MAX_PROMPT_CHARS = 12_000
 
 # ── System Prompt ─────────────────────────────────────────────
 SYSTEM_PROMPT = """\
@@ -46,6 +47,12 @@ class NamingService:
     def __init__(self):
         self._client = DeepSeekClient()
 
+    @staticmethod
+    def _enforce_prompt_budget(prompt: str) -> str:
+        if len(prompt) > MAX_PROMPT_CHARS:
+            raise DeepSeekError("输入内容过长，请缩短后重试", status_code=413)
+        return prompt
+
     def _build_generate_prompt(self, request: dict) -> str:
         """拼装首次生成 prompt."""
         gender_text = "男" if request.get("gender") == "male" else "女"
@@ -63,7 +70,7 @@ class NamingService:
             parts.append(f"- 其他期望：{request['expectations']}")
 
         user_text = "请为以下信息生成名字：\n" + "\n".join(parts)
-        return user_text
+        return self._enforce_prompt_budget(user_text)
 
     def _build_refine_prompt(
         self,
@@ -89,7 +96,7 @@ class NamingService:
         parts.append(f"\n用户的新反馈：{feedback}")
         parts.append("\n请根据以上反馈重新生成名字，保持 JSON 格式。")
 
-        return "\n".join(parts)
+        return self._enforce_prompt_budget("\n".join(parts))
 
     def _clean_json(self, raw: str) -> str:
         """清理 LLM 常见 JSON 错误."""
@@ -143,17 +150,17 @@ class NamingService:
 
         raise DeepSeekError("无法解析 AI 返回的名字数据，请重试", status_code=502)
 
-    async def generate(self, request: dict) -> dict:
+    async def generate(self, request: dict, api_key: str | None = None) -> dict:
         """首次生成名字."""
         user_prompt = self._build_generate_prompt(request)
-        raw = await self._client.chat(SYSTEM_PROMPT, user_prompt)
+        raw = await self._client.chat(SYSTEM_PROMPT, user_prompt, api_key)
         names = self._parse_response(raw)
         return {
             "conversation_id": str(uuid.uuid4()),
             "names": names,
         }
 
-    async def analyze(self, full_name: str, gender: str = "male") -> dict:
+    async def analyze(self, full_name: str, gender: str = "male", api_key: str | None = None) -> dict:
         """分析已有名字."""
         gender_text = "男" if gender == "male" else "女"
         user_prompt = f"""请分析以下名字：
@@ -175,7 +182,7 @@ class NamingService:
 从寓意、音韵、五行、文化内涵等角度评价，给出0-100的评分。
 必须严格按 JSON 格式返回，不要包含任何其他文字。"""
 
-        raw = await self._client.chat(analyze_system, user_prompt)
+        raw = await self._client.chat(analyze_system, user_prompt, api_key)
         try:
             data = json.loads(self._clean_json(raw))
             return data
@@ -187,10 +194,12 @@ class NamingService:
                 return json.loads(raw[start:end + 1])
             raise DeepSeekError("无法解析分析结果", status_code=502)
 
-    async def compare(self, names: list[str], gender: str = "male") -> dict:
+    async def compare(self, names: list[str], gender: str = "male", api_key: str | None = None) -> dict:
         """对比多个名字."""
         gender_text = "男" if gender == "male" else "女"
         names_text = "、".join(names)
+        if any(len(name) > 20 for name in names) or len(names_text) > MAX_PROMPT_CHARS:
+            raise DeepSeekError("输入内容过长，请缩短后重试", status_code=413)
         user_prompt = f"""请横向对比以下 {len(names)} 个名字：
 名字：{names_text}
 性别：{gender_text}
@@ -201,10 +210,10 @@ class NamingService:
 {{"rankings":[{{"rank":1,"full_name":"名字","score":92,"meaning_score":9,"sound_score":9,"wuxing_score":8,"char_score":8,"summary":"综合评价"}}]}}"""
 
         compare_system = """你是一位专业的中国取名大师。请客观对比多个名字，从多维度评分排名。必须严格按 JSON 格式返回。"""
-        raw = await self._client.chat(compare_system, user_prompt)
+        raw = await self._client.chat(compare_system, user_prompt, api_key)
         return self._parse_compare(raw)
 
-    async def premium(self, request: dict) -> dict:
+    async def premium(self, request: dict, api_key: str | None = None) -> dict:
         """精品取名——比普通取名多：八字详批、音律/字形评分、重名概率、名字故事."""
         sys_prompt = """你是一位专业的中国取名大师，精通八字命理、音律美学、汉字字形分析。
 
@@ -224,8 +233,8 @@ class NamingService:
   ]
 }"""
 
-        user_prompt = self._build_generate_prompt(request) + "\n请进行精品深度分析，每个名字提供完整八字、音律、字形、重名分析和命名故事。"
-        raw = await self._client.chat(sys_prompt, user_prompt)
+        user_prompt = self._enforce_prompt_budget(self._build_generate_prompt(request) + "\n请进行精品深度分析，每个名字提供完整八字、音律、字形、重名分析和命名故事。")
+        raw = await self._client.chat(sys_prompt, user_prompt, api_key)
         names = self._parse_response(raw)
         return {"names": names, "is_premium": True}
 
@@ -245,9 +254,10 @@ class NamingService:
         original_request: dict,
         history: list[dict],
         feedback: str,
+        api_key: str | None = None,
     ) -> dict:
         """根据反馈微调名字."""
         user_prompt = self._build_refine_prompt(original_request, history, feedback)
-        raw = await self._client.chat(SYSTEM_PROMPT, user_prompt)
+        raw = await self._client.chat(SYSTEM_PROMPT, user_prompt, api_key)
         names = self._parse_response(raw)
         return {"names": names}

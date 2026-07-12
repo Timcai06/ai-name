@@ -30,16 +30,10 @@ class DeepSeekClient:
 
     def __init__(self, config: Optional[DeepSeekConfig] = None):
         self.config = config or DeepSeekConfig()
-        if not DEEPSEEK_API_KEY:
-            raise DeepSeekError(
-                "DEEPSEEK_API_KEY 环境变量未设置。"
-                "请在 .env 文件中设置或通过环境变量导出。"
-            )
-
-    @property
-    def _headers(self) -> dict:
+    @staticmethod
+    def _headers(api_key: str) -> dict:
         return {
-            "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
 
@@ -47,8 +41,15 @@ class DeepSeekClient:
         self,
         system_prompt: str,
         user_prompt: str,
+        api_key: str | None = None,
     ) -> str:
         """发送 chat completion 请求，返回响应文本."""
+        resolved_key = (api_key or DEEPSEEK_API_KEY).strip()
+        if not resolved_key:
+            raise DeepSeekError(
+                "尚未配置 DeepSeek API Key，请在模型设置中填写自己的 Key。",
+                status_code=503,
+            )
         payload = {
             "model": self.config.model,
             "temperature": self.config.temperature,
@@ -63,7 +64,7 @@ class DeepSeekClient:
             try:
                 response = await client.post(
                     f"{DEEPSEEK_BASE_URL}/chat/completions",
-                    headers=self._headers,
+                    headers=self._headers(resolved_key),
                     json=payload,
                 )
             except httpx.TimeoutException:

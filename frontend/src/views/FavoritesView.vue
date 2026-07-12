@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-[#f5f5f7]">
+  <div class="min-h-screen bg-[#f6f3ec]">
     <div class="max-w-[680px] mx-auto px-6 py-16">
       <div class="flex items-center justify-between mb-10">
         <h1 class="text-[32px] font-semibold text-[#1d1d1f]">收藏夹</h1>
