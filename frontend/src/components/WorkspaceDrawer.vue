@@ -11,8 +11,8 @@
         role="dialog"
         aria-modal="true"
         :aria-labelledby="drawerId"
-        class="drawer-panel relative max-h-[calc(100dvh-24px)] w-full overflow-hidden rounded-[28px] bg-[#f6f3ec] shadow-[-24px_0_80px_rgba(25,25,22,.2)] sm:max-h-[calc(100dvh-40px)]"
-        :style="{ maxWidth: width }"
+        class="drawer-panel relative w-full overflow-hidden rounded-[28px] bg-[#f6f3ec] shadow-[-24px_0_80px_rgba(25,25,22,.2)]"
+        :style="{ height: 'calc(100dvh - 40px)', maxWidth: width, minHeight: '500px' }"
       >
         <div class="absolute inset-y-0 left-0 w-px bg-[#b7a178]/50" />
         <div
@@ -79,6 +79,7 @@ watch(
   async (value) => {
     if (!value) return;
     document.body.style.overflow = "hidden";
+    document.body.style.scrollbarGutter = "stable";
     await nextTick();
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     timeline = gsap
@@ -106,6 +107,7 @@ function onKey(e: KeyboardEvent) {
 }
 function finish() {
   document.body.style.overflow = "";
+  document.body.style.scrollbarGutter = "";
   window.removeEventListener("keydown", onKey);
   emit("close");
 }
@@ -119,6 +121,7 @@ function close() {
 onBeforeUnmount(() => {
   timeline?.kill();
   document.body.style.overflow = "";
+  document.body.style.scrollbarGutter = "";
   window.removeEventListener("keydown", onKey);
 });
 </script>
