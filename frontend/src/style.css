@@ -9,6 +9,8 @@
 }
 
 html { overflow-y: scroll; scrollbar-gutter: stable; }
+.toast-enter-active,.toast-leave-active{transition:.25s ease}
+.toast-enter-from,.toast-leave-to{opacity:0;transform:translateY(-8px)}
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

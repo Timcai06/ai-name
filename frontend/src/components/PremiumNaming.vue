@@ -1,6 +1,7 @@
 <template>
   <div class="w-full max-w-[820px] mx-auto">
     <NameForm v-model="form" :loading="loading" :disabled="loading" estimate="10-15" @submit="handleSubmit" />
+    <Transition name="toast"><div v-if="favMsg" class="fixed left-1/2 top-6 z-[100] -translate-x-1/2 rounded-full px-5 py-3 text-sm text-white shadow-xl" :class="favType==='error'?'bg-[#b65345]':'bg-[#32695d]'">{{ favMsg }}</div></Transition>
     <section v-if="showResults" class="mt-10">
       <PremiumResults :names="names" :state="state" :error-message="error" @retry="handleSubmit(form)" @favorite="handleFavorite" />
     </section>
@@ -30,7 +31,9 @@ async function handleSubmit(data: GenerateRequest) {
   try { const r = await premiumNaming(data); names.value=r.names; state.value=r.names.length?'success':'empty' } catch(e:any){ error.value=e.message; state.value='error' } finally{loading.value=false}
 }
 
+const favMsg = ref('')
+const favType = ref('ok')
 async function handleFavorite(name: any) {
-  try { await addFavorite(name.full_name, name) } catch(e:any){}
+  try { await addFavorite(name.full_name, name); favMsg.value = '已收藏'; favType.value = 'ok'; setTimeout(() => favMsg.value = '', 2000) } catch(e:any){ favMsg.value = e.message || '收藏失败'; favType.value = 'error'; setTimeout(() => favMsg.value = '', 2000) }
 }
 </script>

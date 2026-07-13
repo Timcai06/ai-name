@@ -44,14 +44,16 @@
   >
 </template>
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import WorkspaceDrawer from "./WorkspaceDrawer.vue";
 import { getFavorites, removeFavorite } from "../api";
-defineProps<{ open: boolean }>();
+const props = defineProps<{ open: boolean }>();
 const emit = defineEmits<{ close: [] }>();
 const items = ref<any[]>([]),
   loading = ref(true),
   error = ref("");
+watch(() => props.open, v => { if (v) load() });
+onMounted(load);
 async function load() {
   try {
     const r: any = await getFavorites();
