@@ -39,14 +39,13 @@
   </WorkspaceDrawer>
 </template>
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { ref, watch } from "vue";
 import WorkspaceDrawer from "./WorkspaceDrawer.vue";
 import { clearAllHistory, deleteHistory, getHistory, batchDeleteHistory } from "../api";
 import type { HistoryItem } from "../types";
 const props = defineProps<{ open: boolean }>();
 const emit = defineEmits<{ close: [] }>();
 watch(() => props.open, v => { if (v) load() });
-onMounted(load);
 const items = ref<HistoryItem[]>([]), total = ref(0), loading = ref(true), error = ref(""), filter = ref(""), expanded = ref<number | null>(null), batchMode = ref(false), selected = ref<number[]>([]);
 const formatTime = (v: string) => v?.replace("T", " ").slice(0, 16) || "";
 function toggleSelect(id: number) { const i = selected.value.indexOf(id); i >= 0 ? selected.value.splice(i,1) : selected.value.push(id) }

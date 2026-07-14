@@ -1,9 +1,9 @@
 <template>
-  <Teleport to="body"><div v-if="open" ref="layer" class="fixed inset-0 z-[80] flex items-center justify-end bg-[#191916]/35 p-3 backdrop-blur-[3px] sm:p-5" @click.self="close">
-      <aside ref="panel" role="dialog" aria-modal="true" :aria-labelledby="drawerId" class="drawer-panel relative max-h-[calc(100dvh-24px)] w-full overflow-hidden rounded-[28px] bg-[#f6f3ec] shadow-[-24px_0_80px_rgba(25,25,22,.2)] sm:max-h-[calc(100dvh-40px)]" :style="{ maxWidth: width }">
+  <Teleport to="body"><div v-if="open" ref="layer" class="drawer-layer fixed inset-0 z-[80] flex items-center justify-end bg-[#191916]/35 p-3 backdrop-blur-[3px] sm:p-5" @click.self="close">
+      <aside ref="panel" role="dialog" aria-modal="true" :aria-labelledby="drawerId" class="drawer-panel relative w-full overflow-hidden rounded-[28px] bg-[#f6f3ec] shadow-[-24px_0_80px_rgba(25,25,22,.2)]" :style="{ maxWidth: width }">
         <div class="absolute inset-y-0 left-0 w-px bg-[#b7a178]/50" /><div ref="accent" class="absolute left-0 top-0 h-32 w-[3px] origin-top bg-[#32695d]" />
-        <div class="flex max-h-[inherit] flex-col">
-          <header class="drawer-item flex items-start justify-between border-b border-[#d9d1c3] px-7 py-7 sm:px-10">
+        <div class="flex h-full flex-col">
+          <header class="drawer-item flex shrink-0 items-start justify-between border-b border-[#d9d1c3] px-7 py-7 sm:px-10">
             <div><p class="text-xs tracking-[.24em] text-[#32695d]">{{ kicker }}</p><h2 :id="drawerId" class="mt-3 font-serif text-4xl">{{ title }}</h2><p v-if="description" class="mt-2 text-sm text-[#77736a]">{{ description }}</p></div>
             <button class="group grid h-10 w-10 place-items-center rounded-full border border-[#d9d1c3] text-xl text-[#77736a]" aria-label="关闭" @click="close"><span class="transition-transform duration-300 group-hover:rotate-90">×</span></button>
           </header>
@@ -27,6 +27,7 @@ watch(() => props.open, async (value) => {
     document.body.style.width = "100%";
     await nextTick();
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) { window.addEventListener("keydown", onKey); return }
+    timeline?.kill();
     timeline = gsap.timeline({ defaults: { ease: "power3.out" } })
       .fromTo(layer.value!, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.24 })
       .fromTo(panel.value!, { xPercent: 104 }, { xPercent: 0, duration: 0.62 }, 0)
@@ -39,4 +40,14 @@ function finish() { const scrollY = document.body.style.top; document.body.style
 function close() { if (!timeline || matchMedia("(prefers-reduced-motion: reduce)").matches) { finish(); return } timeline.eventCallback("onReverseComplete", finish).timeScale(1.35).reverse(); }
 onBeforeUnmount(() => { timeline?.kill(); const scrollY = document.body.style.top; document.body.style.position = ""; document.body.style.top = ""; document.body.style.width = ""; window.scrollTo(0, parseInt(scrollY || "0") * -1); window.removeEventListener("keydown", onKey); });
 </script>
-<style scoped>.drawer-panel,.drawer-item{will-change:transform,opacity}</style>
+<style scoped>
+.drawer-layer { will-change: opacity; }
+.drawer-panel {
+  height: calc(100dvh - 24px);
+  will-change: transform;
+}
+.drawer-content { scrollbar-gutter: stable; }
+@media (min-width: 640px) {
+  .drawer-panel { height: min(760px, calc(100dvh - 40px)); }
+}
+</style>

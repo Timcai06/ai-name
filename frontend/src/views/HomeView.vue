@@ -40,26 +40,34 @@
       </aside>
     </div>
 
-    <AuthDrawer :open="authOpen" @close="authOpen = false" @success="afterLogin" @guest="useGuestTrial" />
-    <ModelSettingsDrawer :open="settingsOpen" @close="settingsOpen = false" @saved="refreshKeyState" />
-    <HistoryDrawer v-show="historyOpen" :open="historyOpen" @close="historyOpen=false" />
-    <FavoritesDrawer v-show="favoritesOpen" :open="favoritesOpen" @close="favoritesOpen=false" />
-    <ProfileDrawer v-show="profileOpen" :open="profileOpen" @close="profileOpen=false" />
+    <AuthDrawer v-if="authOpen" :open="authOpen" @close="authOpen = false" @success="afterLogin" @guest="useGuestTrial" />
+    <ModelSettingsDrawer v-if="settingsOpen" :open="settingsOpen" @close="settingsOpen = false" @saved="refreshKeyState" />
+    <HistoryDrawer v-if="historyOpen" :open="historyOpen" @close="historyOpen=false" />
+    <FavoritesDrawer v-if="favoritesOpen" :open="favoritesOpen" @close="favoritesOpen=false" />
+    <ProfileDrawer v-if="profileOpen" :open="profileOpen" @close="profileOpen=false" />
     <Transition name="toast"><div v-if="toast" class="fixed left-1/2 top-6 z-[100] -translate-x-1/2 rounded-full px-5 py-3 text-sm text-white shadow-xl" :class="toast.type === 'error' ? 'bg-[#b65345]' : 'bg-[#32695d]'">{{ toast.message }}</div></Transition>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { computed, defineAsyncComponent, nextTick, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import gsap from 'gsap'
 import { useAuthStore } from '../stores/auth'
 import type { GenerateRequest, NameItem, ChatMessage, LoadState } from '../types'
 import { DEEPSEEK_KEY_SESSION, addFavorite, generateNames, guestGenerateNames, refineNames } from '../api'
-import NameForm from '../components/NameForm.vue'; import NameResults from '../components/NameResults.vue'; import RefineChat from '../components/RefineChat.vue'
-import NameAnalyzer from '../components/NameAnalyzer.vue'; import CompareNames from '../components/CompareNames.vue'; import PremiumNaming from '../components/PremiumNaming.vue'
-import AuthDrawer from '../components/AuthDrawer.vue'; import ModelSettingsDrawer from '../components/ModelSettingsDrawer.vue'
-import HistoryDrawer from '../components/HistoryDrawer.vue'; import FavoritesDrawer from '../components/FavoritesDrawer.vue'; import ProfileDrawer from '../components/ProfileDrawer.vue'
+import NameForm from '../components/NameForm.vue'
+
+const NameResults = defineAsyncComponent(() => import('../components/NameResults.vue'))
+const RefineChat = defineAsyncComponent(() => import('../components/RefineChat.vue'))
+const NameAnalyzer = defineAsyncComponent(() => import('../components/NameAnalyzer.vue'))
+const CompareNames = defineAsyncComponent(() => import('../components/CompareNames.vue'))
+const PremiumNaming = defineAsyncComponent(() => import('../components/PremiumNaming.vue'))
+const AuthDrawer = defineAsyncComponent(() => import('../components/AuthDrawer.vue'))
+const ModelSettingsDrawer = defineAsyncComponent(() => import('../components/ModelSettingsDrawer.vue'))
+const HistoryDrawer = defineAsyncComponent(() => import('../components/HistoryDrawer.vue'))
+const FavoritesDrawer = defineAsyncComponent(() => import('../components/FavoritesDrawer.vue'))
+const ProfileDrawer = defineAsyncComponent(() => import('../components/ProfileDrawer.vue'))
 
 const router = useRouter(); const authStore = useAuthStore(); const hero = ref<HTMLElement>(); const workbench = ref<HTMLElement>(); const modeLayer=ref<HTMLElement>(); const modePanel=ref<HTMLElement>(); const modeMenuOpen=ref(false)
 const mode = ref('name'); const modes = [{key:'name',index:'01',label:'智能取名',fee:'基础',title:'写下关于名字的期待'},{key:'analyze',index:'02',label:'名字分析',fee:'¥1',title:'读懂一个名字'},{key:'compare',index:'03',label:'名字对比',fee:'¥1',title:'把候选名字放在一起'},{key:'premium',index:'04',label:'精品取名',fee:'¥2',title:'更完整的命名推演'}]

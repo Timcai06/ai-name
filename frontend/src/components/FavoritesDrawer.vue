@@ -44,7 +44,7 @@
   >
 </template>
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { ref, watch } from "vue";
 import WorkspaceDrawer from "./WorkspaceDrawer.vue";
 import { getFavorites, removeFavorite } from "../api";
 const props = defineProps<{ open: boolean }>();
@@ -53,8 +53,9 @@ const items = ref<any[]>([]),
   loading = ref(true),
   error = ref("");
 watch(() => props.open, v => { if (v) load() });
-onMounted(load);
 async function load() {
+  loading.value = true;
+  error.value = "";
   try {
     const r: any = await getFavorites();
     items.value = r.items;
@@ -72,5 +73,4 @@ async function remove(id: number) {
     error.value = e.message;
   }
 }
-onMounted(load);
 </script>

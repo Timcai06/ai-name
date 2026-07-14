@@ -63,14 +63,16 @@
 
 <script setup lang="ts">
 import { nextTick } from 'vue'
-import html2canvas from 'html2canvas'
-import { jsPDF } from 'jspdf'
 import type { LoadState, NameItem } from '../types'
 
 const props = defineProps<{ names: NameItem[]; state: LoadState; errorMessage: string }>()
 const emit = defineEmits<{ retry: []; favorite: [name: NameItem] }>()
 
 async function exportPDF() {
+  const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+    import('html2canvas'),
+    import('jspdf'),
+  ])
   // 创建一个离屏容器用于渲染中文内容
   const div = document.createElement('div')
   div.style.cssText = 'position:fixed;left:-9999px;top:0;width:700px;background:white;padding:30px;font-family:"PingFang SC","Microsoft YaHei",sans-serif;color:#1d1d1f;'
