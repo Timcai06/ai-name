@@ -284,7 +284,7 @@ async function upload(event: Event) {
 }
 async function doRecharge(a: number) { try { const r: any = await recharge(a); wallet.balance = r.balance; success.value = '充值成功' } catch (e: any) { error.value = e.message } }
 async function doBuyVip(lvl: string) { try { const r: any = await buyVip(lvl); wallet.balance = r.balance; wallet.vip_level = lvl; success.value = '开通成功' } catch (e: any) { error.value = e.message } }
-watch(() => props.open, v => { if (v) load() });
+watch(() => props.open, v => { if (v) load() }, { immediate: true });
 </script>
 <style scoped>
 .field {

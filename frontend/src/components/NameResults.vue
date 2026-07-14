@@ -11,19 +11,7 @@
     </div>
 
     <!-- 加载中：骨架屏 -->
-    <div v-if="state === 'loading'" class="space-y-4">
-      <div
-        v-for="i in 5" :key="i"
-        class="bg-white/80 backdrop-blur-xl rounded-2xl p-6
-               shadow-[0_2px_12px_rgba(0,0,0,0.03)] border border-[#d2d2d7]/30
-               animate-pulse"
-        :style="{ animationDelay: `${(i - 1) * 0.1}s` }"
-      >
-        <div class="h-[28px] w-24 bg-[#e8e8ed] rounded mb-3" />
-        <div class="h-[18px] w-full bg-[#e8e8ed] rounded mb-2" />
-        <div class="h-[16px] w-48 bg-[#e8e8ed] rounded" />
-      </div>
-    </div>
+    <NameCardSkeleton v-if="state === 'loading'" />
 
     <!-- 空结果 -->
     <div
@@ -69,6 +57,7 @@
 
 <script setup lang="ts">
 import type { LoadState, NameItem } from '../types'
+import NameCardSkeleton from './NameCardSkeleton.vue'
 import RecommendedNameCard from './RecommendedNameCard.vue'
 
 const props = defineProps<{

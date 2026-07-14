@@ -2,9 +2,7 @@
   <div class="w-full max-w-[820px] mx-auto">
     <div v-if="state==='idle'" class="text-center py-20"><p class="text-[17px] text-[#aeaeb2]">输入信息后点击「生成名字」</p></div>
 
-    <div v-if="state==='loading'" class="space-y-4">
-      <div v-for="i in 3" :key="i" class="bg-white/80 rounded-2xl p-6 animate-pulse"><div class="h-7 w-24 bg-[#e8e8ed] rounded mb-3"/><div class="h-4 w-full bg-[#e8e8ed] rounded mb-2"/><div class="h-4 w-2/3 bg-[#e8e8ed] rounded"/></div>
-    </div>
+    <NameCardSkeleton v-if="state==='loading'" />
 
     <div v-if="state==='empty'" class="text-center py-16"><p class="text-[17px] text-[#86868b]">暂未生成到合适的名字</p></div>
     <div v-if="state==='error'" class="text-center py-16"><p class="text-[17px] text-[#ff3b30] mb-3">{{errorMessage}}</p><button class="text-[15px] text-[#0071e3] hover:underline" @click="emit('retry')">重试</button></div>
@@ -28,6 +26,7 @@
 <script setup lang="ts">
 import { nextTick } from 'vue'
 import type { LoadState, NameItem } from '../types'
+import NameCardSkeleton from './NameCardSkeleton.vue'
 import RecommendedNameCard from './RecommendedNameCard.vue'
 
 const props = defineProps<{ names: NameItem[]; state: LoadState; errorMessage: string }>()
