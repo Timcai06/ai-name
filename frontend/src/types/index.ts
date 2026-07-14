@@ -21,6 +21,11 @@ export interface NameItem {
   sound_analysis?: string
   char_analysis?: string
   popularity?: string
+  source_quote?: string
+  source_context?: string
+  character_meaning?: string
+  naming_story?: string
+  usage_advice?: string
   score?: number
   sound_score?: number
   meaning_score?: number
@@ -28,6 +33,13 @@ export interface NameItem {
   char_score?: number
   summary?: string
   rank?: number
+}
+
+export type FavoriteCompletion = 'saved' | 'error' | 'cancelled'
+
+export interface FavoriteAction {
+  name: NameItem
+  complete: (status: FavoriteCompletion) => void
 }
 
 /** 生成响应 */

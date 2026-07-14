@@ -154,7 +154,7 @@
   >
 </template>
 <script setup lang="ts">
-import { onMounted, reactive, ref, watch } from "vue";
+import { reactive, ref, watch } from "vue";
 import WorkspaceDrawer from "./WorkspaceDrawer.vue";
 import {
   bindEmail,
@@ -202,6 +202,8 @@ function fail(e: any) {
   success.value = "";
 }
 async function load() {
+  loading.value = true;
+  error.value = "";
   try {
     Object.assign(profile, await getProfile());
     const s = await getStats(); stats.total = s.total_namings || 0; stats.favorites = s.favorites || 0;
@@ -282,8 +284,7 @@ async function upload(event: Event) {
 }
 async function doRecharge(a: number) { try { const r: any = await recharge(a); wallet.balance = r.balance; success.value = '充值成功' } catch (e: any) { error.value = e.message } }
 async function doBuyVip(lvl: string) { try { const r: any = await buyVip(lvl); wallet.balance = r.balance; wallet.vip_level = lvl; success.value = '开通成功' } catch (e: any) { error.value = e.message } }
-watch(() => props.open, v => { if (v) load() });
-onMounted(load);
+watch(() => props.open, v => { if (v) load() }, { immediate: true });
 </script>
 <style scoped>
 .field {
